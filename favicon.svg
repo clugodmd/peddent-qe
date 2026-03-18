@@ -1,0 +1,9 @@
+<svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" fill="#0f172a"/>
+  <g transform="translate(96, 96)">
+    <!-- Tooth shape -->
+    <path d="M -20 -40 Q -20 -50 -10 -55 Q 0 -60 10 -55 Q 20 -50 20 -40 L 20 20 Q 20 40 10 50 Q 0 55 -10 50 Q -20 40 -20 20 Z" fill="#3b82f6" stroke="#8b5cf6" stroke-width="2"/>
+    <!-- Checkmark -->
+    <path d="M -5 5 L 5 15 L 15 -5" stroke="#10b981" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
