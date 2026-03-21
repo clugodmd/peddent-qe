@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Play, Zap, Lightbulb, BookOpen, TrendingUp, Flame } from 'lucide-react';
+import { Play, Zap, Lightbulb, BookOpen, TrendingUp, Flame, AlertCircle } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/common/Button';
 import { ProgressBar } from '../components/common/ProgressBar';
@@ -15,6 +15,17 @@ export const Home = () => {
   const [stats, setStats] = useState(null);
   const [topicStats, setTopicStats] = useState([]);
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0 });
+
+  // Calculate missed questions count
+  const missedCount = useMemo(() => {
+    const allQuestions = getAllQuestions();
+    const missed = allQuestions.filter((question) => {
+      const qProgress = progress[question.id];
+      if (!qProgress || qProgress.attempts === 0) return false;
+      return qProgress.correct < qProgress.attempts;
+    });
+    return missed.length;
+  }, [progress]);
 
   useEffect(() => {
     const allQuestions = getAllQuestions();
@@ -79,7 +90,7 @@ export const Home = () => {
 
   return (
     <div className="min-h-screen bg-navy-900 pb-32">
-      <Header title="PedDent QE Review" />
+      <Header title="PedBoards QE" />
 
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Welcome Section */}
@@ -155,6 +166,32 @@ export const Home = () => {
                   />
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Missed Questions Alert */}
+        {missedCount > 0 && (
+          <div className="bg-orange-600/20 border border-orange-500/50 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={24} className="text-orange-400 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-300 mb-1">
+                  {missedCount} Question{missedCount !== 1 ? 's' : ''} to Review
+                </h3>
+                <p className="text-orange-100 text-sm mb-3">
+                  You have {missedCount} question{missedCount !== 1 ? 's' : ''} you answered incorrectly. Review them to improve your understanding.
+                </p>
+                <Button
+                  onClick={() => navigate('/missed')}
+                  variant="primary"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <AlertCircle size={16} />
+                  View Missed Questions
+                </Button>
+              </div>
             </div>
           </div>
         )}
