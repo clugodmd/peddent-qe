@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ — PedBoards QE</title>
+  <meta name="description" content="Frequently asked questions about PedBoards QE — the pediatric dental board exam prep platform." />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary:    #0f172a;
+      --bg-card:       #1e293b;
+      --bg-card-hover: #263148;
+      --accent:        #16a34a;
+      --accent-light:  #22c55e;
+      --accent-dim:    rgba(22, 163, 74, 0.15);
+      --text-primary:  #f8fafc;
+      --text-muted:    #94a3b8;
+      --border:        rgba(148, 163, 184, 0.12);
+      --radius:        10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Top nav ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .topbar-brand {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .topbar-brand span.dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent-light); }
+    .back-link svg { flex-shrink: 0; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 4rem 1.5rem 2.5rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 .accent { color: var(--accent-light); }
+
+    .hero p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto 1.75rem;
+    }
+
+    .support-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .support-cta:hover {
+      background: var(--accent-light);
+      transform: translateY(-1px);
+    }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem 5rem;
+    }
+
+    /* ── Section labels ── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 2.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-label .section-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      color: var(--accent-light);
+      flex-shrink: 0;
+    }
+
+    .section-label h2 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-light);
+    }
+
+    /* ── Accordion ── */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    details {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    details[open] {
+      border-color: rgba(22, 163, 74, 0.35);
+    }
+
+    details summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.975rem;
+      color: var(--text-primary);
+      list-style: none;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    details summary::-webkit-details-marker { display: none; }
+
+    details summary:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .chevron {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+      transition: transform 0.25s ease;
+    }
+
+    details[open] summary .chevron {
+      transform: rotate(180deg);
+    }
+
+    .faq-body {
+      padding: 0 1.25rem 1.25rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.75;
+      border-top: 1px solid var(--border);
+    }
+
+    .faq-body p + p { margin-top: 0.75rem; }
+
+    .faq-body a {
+      color: var(--accent-light);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .faq-body a:hover { color: #fff; }
+
+    .faq-body ul, .faq-body ol {
+      padding-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .faq-body li { margin-bottom: 0.4rem; }
+
+    .faq-body .callout {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      background: rgba(22, 163, 74, 0.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .faq-body .callout.warn {
+      background: rgba(234, 179, 8, 0.08);
+      border-color: #eab308;
+    }
+
+    .faq-body .callout.info {
+      background: rgba(59, 130, 246, 0.08);
+      border-color: #3b82f6;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 2rem 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent-light);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .topbar { padding: 0 1rem; }
+      .hero { padding: 2.5rem 1rem 2rem; }
+      main { padding: 0 1rem 4rem; }
+      details summary { padding: 0.875rem 1rem; font-size: 0.9rem; }
+      .faq-body { padding: 0 1rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top nav ── -->
+<header class="topbar">
+  <a href="https://pedsdentqe.com" class="topbar-brand">
+    <span class="dot"></span>PedBoards QE
+  </a>
+  <a href="https://pedsdentqe.com" class="back-link">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to site
+  </a>
+</header>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-badge">Help Center</div>
+  <h1>Frequently Asked <span class="accent">Questions</span></h1>
+  <p>Everything you need to know about PedBoards QE. Can't find your answer? We're happy to help.</p>
+  <a href="mailto:support@pedsdentqe.com" class="support-cta">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+    </svg>
+    Contact Support
+  </a>
+</section>
+
+<!-- ── FAQ Content ── -->
+<main>
+
+  <!-- SECTION 1: Getting Started -->
+  <div class="section-label">
+    <div class="section-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+      </svg>
+    </div>
+    <h2>Getting Started</h2>
+  </div>
+
+  <div class="faq-list">
+
+    <details>
+      <summary>
+        What is PedBoards QE?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>PedBoards QE is a dedicated question bank and study platform built specifically for pediatric dentistry board exam preparation. It provides high-yield, exam-style questions covering the full scope of pediatric dental knowledge — from growth and development to behavior management and clinical procedures.</p>
+        <p>The platform features an <strong>AI Smart Tutor</strong> that gives you detailed explanations and personalized feedback so you're not just memorizing answers, but truly understanding the material.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        Who is PedBoards QE for?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>PedBoards QE is designed for:</p>
+        <ul>
+          <li><strong>Pediatric dentistry residents</strong> preparing for Part 1 or Part 2 board exams</li>
+          <li><strong>General dentists</strong> pursuing board certification or recertification in pediatric dentistry</li>
+          <li><strong>Students and clinicians</strong> who want to strengthen their pediatric dental knowledge</li>
+        </ul>
+        <p>Whether you're a few months out from your exam or just starting to build a study habit, PedBoards QE adapts to where you are.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        How do I sign up?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>Getting started is quick:</p>
+        <ol>
+          <li>Visit <a href="https://pedsdentqe.com" target="_blank" rel="noopener">pedsdentqe.com</a></li>
+          <li>Click <strong>Sign Up</strong> or <strong>Get Started</strong></li>
+          <li>Create your account with your email address and a password</li>
+          <li>Complete checkout ($35/month via Stripe)</li>
+          <li>You'll have immediate access to the full question bank</li>
+        </ol>
+        <div class="callout">
+          <span>💡</span>
+          <span>Access is granted instantly after payment. No waiting period or manual approval required.</span>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        Do UT Health residents get free access?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>Yes! UT Health San Antonio pediatric dentistry residents receive complimentary access to PedBoards QE as part of their program.</p>
+        <p>If you're a UT Health resident and haven't received your access credentials, please reach out to your program director or contact us directly at <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a> with your institutional email address and we'll get you set up.</p>
+      </div>
+    </details>
+
+  </div><!-- /faq-list -->
+
+
+  <!-- SECTION 2: Billing & Refunds -->
+  <div class="section-label">
+    <div class="section-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+      </svg>
+    </div>
+    <h2>Billing &amp; Refunds</h2>
+  </div>
+
+  <div class="faq-list">
+
+    <details>
+      <summary>
+        How much does it cost?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>PedBoards QE is <strong>$35/month</strong>, billed monthly. There are no setup fees, no contracts, and no hidden charges.</p>
+        <p>Your subscription renews automatically on the same calendar day each month. You can cancel at any time before your next renewal date to avoid being charged for the following month.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        How do I cancel my subscription?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>You can cancel anytime through the Stripe customer portal — no need to contact us:</p>
+        <ol>
+          <li>Visit the <a href="https://billing.stripe.com/p/login/test" target="_blank" rel="noopener">Billing Portal</a></li>
+          <li>Log in with the email address used at checkout</li>
+          <li>Select <strong>Cancel Plan</strong></li>
+        </ol>
+        <p>After canceling, you retain access through the end of your current paid period. Your subscription will not renew after that date.</p>
+        <div class="callout info">
+          <span>ℹ️</span>
+          <span>Need help canceling? Email us at <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a> and we'll handle it for you promptly.</span>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        What is your refund policy?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>We offer a <strong>24-hour refund window</strong> from the time of your initial purchase. If you're unsatisfied for any reason within the first 24 hours, contact us at <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a> and we will issue a full refund.</p>
+        <div class="callout warn">
+          <span>⚠️</span>
+          <span><strong>After 24 hours, all sales are final.</strong> No refunds will be issued for charges beyond the initial 24-hour window, including partial-month usage or subscription renewals.</span>
+        </div>
+        <p>We recommend exploring the platform fully within your first day to make sure it's the right fit for your study needs.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        What payment methods do you accept?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>We accept all major credit and debit cards through <strong>Stripe</strong>, including:</p>
+        <ul>
+          <li>Visa</li>
+          <li>Mastercard</li>
+          <li>American Express</li>
+          <li>Discover</li>
+        </ul>
+        <p>All transactions are processed securely by Stripe. We never store your full card details on our servers.</p>
+      </div>
+    </details>
+
+  </div><!-- /faq-list -->
+
+
+  <!-- SECTION 3: Using the Platform -->
+  <div class="section-label">
+    <div class="section-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+    </div>
+    <h2>Using the Platform</h2>
+  </div>
+
+  <div class="faq-list">
+
+    <details>
+      <summary>
+        How does the AI Smart Tutor work?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>The AI Smart Tutor is built directly into the question review experience. After you answer a question — whether correct or incorrect — you can ask the AI follow-up questions about the topic, request a deeper explanation, or ask it to relate the concept to a clinical scenario.</p>
+        <p>It's designed to behave like having a knowledgeable co-resident on call: contextual, responsive, and focused on the specific content you're studying. It can:</p>
+        <ul>
+          <li>Explain <em>why</em> the correct answer is right (and why distractors are wrong)</li>
+          <li>Summarize related concepts for deeper understanding</li>
+          <li>Help you connect the dots between similar topics</li>
+        </ul>
+        <div class="callout">
+          <span>✨</span>
+          <span>The more you engage with it, the more targeted and useful its explanations become.</span>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        How many questions are there?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>PedBoards QE contains a continuously growing bank of high-yield questions spanning the full scope of the pediatric dentistry boards exam. Questions are organized by topic and updated regularly to reflect current guidelines and exam formats.</p>
+        <p>New questions are added on an ongoing basis, so your question bank keeps growing during your subscription — you're never working from a static set.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        Can I use it on my phone?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>Yes — PedBoards QE is fully mobile-responsive and works on any modern smartphone or tablet browser. No app download required.</p>
+        <p>Just navigate to <a href="https://pedsdentqe.com" target="_blank" rel="noopener">pedsdentqe.com</a>, log in, and you're ready to study from anywhere — on rounds, between cases, or on the go.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        My question seems incorrect — what should I do?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>We take content accuracy seriously. If you believe a question, answer choice, or explanation contains an error, please flag it so we can review it.</p>
+        <p>Send us an email at <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a> with:</p>
+        <ul>
+          <li>The question text (or question number if shown)</li>
+          <li>What you believe is incorrect</li>
+          <li>A reference or source if you have one (guideline, textbook, etc.)</li>
+        </ul>
+        <p>Our team reviews all flagged questions and will update the platform if a correction is warranted. We appreciate your help keeping the content sharp.</p>
+      </div>
+    </details>
+
+  </div><!-- /faq-list -->
+
+
+  <!-- SECTION 4: Account & Technical -->
+  <div class="section-label">
+    <div class="section-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </div>
+    <h2>Account &amp; Technical</h2>
+  </div>
+
+  <div class="faq-list">
+
+    <details>
+      <summary>
+        I forgot my password — how do I reset it?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>Resetting your password is easy:</p>
+        <ol>
+          <li>Go to the <a href="https://pedsdentqe.com" target="_blank" rel="noopener">login page</a></li>
+          <li>Click <strong>Forgot Password?</strong></li>
+          <li>Enter the email address associated with your account</li>
+          <li>Check your inbox for a reset link (also check your spam/junk folder)</li>
+          <li>Click the link and set a new password</li>
+        </ol>
+        <div class="callout info">
+          <span>ℹ️</span>
+          <span>Password reset links expire after 60 minutes. If yours has expired, simply request a new one from the login page.</span>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        I paid but can't access the platform — what do I do?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>This is uncommon but can happen due to a few reasons. Try these steps first:</p>
+        <ol>
+          <li><strong>Hard refresh</strong> the page (Cmd+Shift+R on Mac / Ctrl+Shift+R on Windows)</li>
+          <li><strong>Log out and back in</strong> to your account</li>
+          <li>Make sure you're logged in with the <strong>same email address</strong> used during checkout</li>
+          <li>Check your email for a confirmation or receipt from Stripe to confirm the charge went through</li>
+        </ol>
+        <p>If you're still unable to access the platform after trying the above, email us at <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a> with your name and the email used at checkout. We'll manually verify and restore your access within a few hours.</p>
+        <div class="callout warn">
+          <span>⚠️</span>
+          <span>Please include your Stripe receipt or transaction ID if available — it helps us locate your account faster.</span>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>
+        How do I contact support?
+        <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="faq-body">
+        <p>We're here to help. You can reach us two ways:</p>
+        <ul>
+          <li>
+            <strong>Email:</strong> <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a><br />
+            Best for billing questions, account issues, and content feedback. We typically respond within 1 business day.
+          </li>
+          <li>
+            <strong>Live Chat:</strong> Click the chat bubble in the bottom-right corner of <a href="https://pedsdentqe.com" target="_blank" rel="noopener">pedsdentqe.com</a> to start a conversation in real time.
+          </li>
+        </ul>
+        <div class="callout">
+          <span>🕐</span>
+          <span>Support hours are generally Monday–Friday, 9am–6pm CT. We do our best to respond to urgent issues outside of business hours.</span>
+        </div>
+      </div>
+    </details>
+
+  </div><!-- /faq-list -->
+
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>
+    Still have questions? Email us at
+    <a href="mailto:support@pedsdentqe.com">support@pedsdentqe.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://pedsdentqe.com">← Back to PedBoards QE</a>
+  </p>
+  <p style="margin-top: 0.5rem; color: #475569; font-size: 0.8rem;">
+    &copy; 2024 PedBoards QE. All rights reserved.
+  </p>
+</footer>
+
+</body>
+</html>
