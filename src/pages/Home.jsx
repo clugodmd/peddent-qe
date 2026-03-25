@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDemo } from '../context/DemoContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Play, Zap, Lightbulb, BookOpen, TrendingUp, Flame, AlertCircle } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -11,7 +12,13 @@ import { getAllQuestions, getStreakData, getUniqueTopic } from '../utils/helpers
 
 export const Home = () => {
   const navigate = useNavigate();
+  const { isDemoMode } = useDemo();
   const progress = useProgressStore((state) => state.progress);
+
+  // Demo users go straight to quiz — no browsing home page
+  useEffect(() => {
+    if (isDemoMode) navigate('/quiz', { replace: true });
+  }, [isDemoMode, navigate]);
   const [stats, setStats] = useState(null);
   const [topicStats, setTopicStats] = useState([]);
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0 });

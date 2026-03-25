@@ -162,33 +162,21 @@ export const Flashcards = () => {
             }}
           >
             <div className="text-xs text-gray-100 mb-4">ANSWER</div>
-            <div className="flex-1 flex flex-col gap-4">
-              {['a', 'b', 'c', 'd', 'e'].map((opt) => {
-                if (!card[opt]) return null;
-                return (
-                  <div
-                    key={opt}
-                    className={`
-                      p-3 rounded-lg
-                      ${
-                        card.answer?.toLowerCase() === opt
-                          ? 'bg-white/20 border border-white/40'
-                          : 'bg-white/10'
-                      }
-                    `}
-                  >
-                    <div className="font-semibold text-white">
-                      {opt.toUpperCase()}
-                      {card.answer?.toLowerCase() === opt && ' ✓'}
-                    </div>
-                    <div className="text-sm text-gray-100 mt-1">{card[opt]}</div>
-                  </div>
-                );
-              })}
+            <div className="flex-1 flex flex-col justify-center">
+              <div className="text-2xl font-bold text-white leading-relaxed">
+                {card[card.answer?.toLowerCase()]}
+              </div>
             </div>
             {card.explanation && (
-              <div className="text-xs text-white/80 mt-4 bg-white/10 p-3 rounded">
+              <div className="text-sm text-white/80 mt-4 border-t border-white/20 pt-4 leading-relaxed">
                 {card.explanation}
+              </div>
+            )}
+            {card.source_url && (
+              <div className="mt-3 pt-2">
+                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  Reference: 2025 AAPD Reference Manual
+                </span>
               </div>
             )}
           </div>

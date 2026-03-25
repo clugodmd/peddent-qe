@@ -31,7 +31,10 @@ export const useQuiz = (initialQuestions = null) => {
           timestamp: Date.now()
         }
       });
-      recordAttempt(currentQuestion.id, isCorrect);
+      recordAttempt(currentQuestion.id, isCorrect, 0, {
+        answer: selectedAnswer,
+        topic: currentQuestion.topic || ''
+      });
       setAnswered(true);
     }
   }, [selectedAnswer, currentQuestion, answers, recordAttempt]);

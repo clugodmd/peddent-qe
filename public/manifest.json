@@ -1,7 +1,7 @@
 {
-  "name": "PedDent QE Review",
-  "short_name": "PedDent QE",
-  "description": "Pediatric Dental Board Exam Review Tool - Study smarter, pass stronger",
+  "name": "PedBoards QE",
+  "short_name": "PedBoards QE",
+  "description": "Pediatric Dental Board Exam Preparation - Study smarter, pass stronger",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

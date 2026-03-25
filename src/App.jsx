@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useProgressStore } from './store/progressStore';
 import { BottomNav } from './components/layout/BottomNav';
@@ -6,6 +6,8 @@ import { Header } from './components/layout/Header';
 import { LoginScreen } from './components/LoginScreen';
 import { DisclaimerScreen, hasAgreedToDisclaimer } from './components/DisclaimerScreen';
 import { useAuth } from './context/AuthContext';
+import { useDemo } from './context/DemoContext';
+import { DemoGate } from './pages/DemoGate';
 import { registerUserDirectory } from './services/firestoreProgress';
 
 // Pages
@@ -18,6 +20,7 @@ import { Progress } from './pages/Progress';
 import { Settings } from './pages/Settings';
 import { MissedQuestions } from './pages/MissedQuestions';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { SupportChat } from './components/SupportChat';
 
 // PWA Service Worker
 const registerServiceWorker = () => {
@@ -54,6 +57,7 @@ const handleInstallPrompt = () => {
 
 export default function App() {
   const { user, loading, isAdmin } = useAuth();
+  const { isDemoMode, demoVerified } = useDemo();
   const settings = useProgressStore((state) => state.settings);
   const [disclaimerDone, setDisclaimerDone] = useState(hasAgreedToDisclaimer);
 
@@ -73,16 +77,16 @@ export default function App() {
     document.documentElement.style.fontSize = fontSizeMap[settings.fontSize] || '16px';
   }, [settings]);
 
-  // Register user in userDirectory so admin can see them
+  // Register user in userDirectory so admin can see them (skip in demo)
   useEffect(() => {
-    if (user) {
+    if (user && !isDemoMode) {
       registerUserDirectory(
         user.uid,
         user.displayName || user.email,
         user.email
       );
     }
-  }, [user]);
+  }, [user, isDemoMode]);
 
   // Show loading spinner while auth state resolves
   if (loading) {
@@ -93,13 +97,23 @@ export default function App() {
     );
   }
 
-  // Not logged in → show login
-  if (!user) {
-    return <LoginScreen />;
+  // Demo mode but not yet verified → show email gate
+  if (isDemoMode && !demoVerified) {
+    return <DemoGate />;
   }
 
-  // Logged in but haven't agreed to disclaimer yet → show once
-  if (!disclaimerDone) {
+  // Not logged in → show login (with support chat available)
+  if (!user) {
+    return (
+      <>
+        <LoginScreen />
+        <SupportChat />
+      </>
+    );
+  }
+
+  // Logged in but haven't agreed to disclaimer yet → show once (skip in demo)
+  if (!disclaimerDone && !isDemoMode) {
     return <DisclaimerScreen onAgree={() => setDisclaimerDone(true)} />;
   }
 
@@ -108,7 +122,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-navy-900 text-gray-100">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={isDemoMode ? <Navigate to="/quiz" replace /> : <Home />} />
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/exam" element={<Exam />} />
@@ -139,6 +153,7 @@ export default function App() {
         </Routes>
 
         <BottomNav />
+        <SupportChat />
       </div>
     </Router>
   );

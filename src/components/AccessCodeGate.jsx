@@ -44,7 +44,7 @@ export function AccessCodeGate({ children }) {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600 mb-4">
             <Stethoscope size={32} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">PedDent QE Review</h1>
+          <h1 className="text-2xl font-bold text-white">PedBoards QE</h1>
           <p className="text-gray-400 mt-1 text-sm">Pediatric Dentistry Board Exam Prep</p>
         </div>
 
@@ -90,7 +90,7 @@ export function AccessCodeGate({ children }) {
         </div>
 
         <p className="text-center text-gray-600 text-xs mt-6">
-          © 2026 PedDent QE · For program use only
+          © 2026 PedBoards QE · For program use only
         </p>
       </div>
     </div>

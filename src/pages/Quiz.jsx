@@ -6,14 +6,18 @@ import { Button } from '../components/common/Button';
 import { QuestionCard } from '../components/common/QuestionCard';
 import { ChoiceButton } from '../components/common/ChoiceButton';
 import { ProgressBar } from '../components/common/ProgressBar';
+import { TutorBot } from '../components/TutorBot';
 import { useQuiz } from '../hooks/useQuiz';
 import { useProgressStore } from '../store/progressStore';
-import { getRandomQuestions, getAnswerChoices, getCorrectAnswer, getUniqueTopic } from '../utils/helpers';
+import { getRandomQuestions, getAnswerChoices, getCorrectAnswer, getUniqueTopic, getAllQuestions } from '../utils/helpers';
+import { useDemo } from '../context/DemoContext';
 
 export const Quiz = () => {
   const navigate = useNavigate();
+  const { isDemoMode, exitDemo, DEMO_QUESTION_LIMIT } = useDemo();
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [quizStarted, setQuizStarted] = useState(false);
+  const [demoComplete, setDemoComplete] = useState(false);
   const [topics, setTopics] = useState([]);
   const [filterMode, setFilterMode] = useState('all');
   const quiz = useQuiz();
@@ -21,6 +25,14 @@ export const Quiz = () => {
   useEffect(() => {
     setTopics(getUniqueTopic());
   }, []);
+
+  // Auto-start quiz in demo mode with limited questions
+  useEffect(() => {
+    if (isDemoMode && !quizStarted) {
+      quiz.setQuestions(getRandomQuestions(DEMO_QUESTION_LIMIT));
+      setQuizStarted(true);
+    }
+  }, [isDemoMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startQuiz = () => {
     let questions;
@@ -139,9 +151,72 @@ export const Quiz = () => {
   const userAnswer = quiz.answers[quiz.currentQuestion.id];
   const isAnswered = !!userAnswer;
 
+  // Demo conversion screen — shown after completing all demo questions
+  if (isDemoMode && demoComplete) {
+    const totalQuestions = getAllQuestions().length;
+    return (
+      <div className="min-h-screen bg-navy-900 pb-32">
+        <Header title="Demo Complete" />
+        <div className="max-w-md mx-auto px-4 py-12">
+          <div className="bg-navy-800 border border-navy-700 rounded-2xl p-8 text-center shadow-xl">
+            <div className="text-5xl mb-4">🎓</div>
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Ready to start studying?
+            </h2>
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              You've seen what PedBoards QE can do. Get full access to all {totalQuestions.toLocaleString()} questions and the AI Smart Tutor.
+            </p>
+
+            <div className="bg-navy-900 border border-navy-600 rounded-xl p-5 mb-6 text-left">
+              <h3 className="text-green-400 font-semibold mb-3">Your subscription includes:</h3>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li>✅ {totalQuestions.toLocaleString()} board-style questions</li>
+                <li>✅ AI Smart Tutor — instant explanations on every question</li>
+                <li>✅ Progress tracking & analytics</li>
+                <li>✅ Exam simulation mode</li>
+                <li>✅ Spaced repetition & flagging</li>
+              </ul>
+            </div>
+
+            <p className="text-gray-400 text-sm mb-4">$35/month · Cancel anytime</p>
+
+            <a
+              href="https://buy.stripe.com/7sY00j8Ig4tEfGNdCugjC01"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white font-semibold transition-colors text-center mb-3"
+            >
+              Start Studying — $35/month →
+            </a>
+            <button
+              onClick={() => setDemoComplete(false)}
+              className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              ← Review your answers
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-navy-900 pb-32">
       <Header title={`Quiz Mode`} />
+
+      {/* Demo banner */}
+      {isDemoMode && (
+        <div className="bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white text-center py-2.5 px-4 text-sm font-medium sticky top-0 z-50">
+          🎯 Demo Mode — {DEMO_QUESTION_LIMIT} questions · No account needed ·{' '}
+          <a
+            href={window.location.origin + window.location.pathname}
+            onClick={exitDemo}
+            className="underline font-bold hover:text-green-300 transition-colors"
+          >
+            Start Free Trial →
+          </a>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Progress */}
@@ -197,12 +272,42 @@ export const Quiz = () => {
         )}
 
         {/* Explanation */}
-        {isAnswered && quiz.currentQuestion.explanation && (
+        {isAnswered && (quiz.currentQuestion.explanation || quiz.currentQuestion.source_url) && (
           <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-4 mb-6">
-            <h4 className="font-semibold text-blue-300 mb-2">Explanation:</h4>
-            <p className="text-gray-200 text-sm leading-relaxed">
-              {quiz.currentQuestion.explanation}
-            </p>
+            {quiz.currentQuestion.explanation && (
+              <>
+                <h4 className="font-semibold text-blue-300 mb-2">Explanation:</h4>
+                <p className="text-gray-200 text-sm leading-relaxed">
+                  {quiz.currentQuestion.explanation}
+                </p>
+              </>
+            )}
+            {quiz.currentQuestion.source_url && (
+              <div className={quiz.currentQuestion.explanation ? 'mt-3 pt-3 border-t border-blue-500/30' : ''}>
+                <a
+                  href={quiz.currentQuestion.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs hover:underline"
+                  style={{ color: 'var(--text3, #6b7280)' }}
+                >
+                  📖 AAPD Guidelines
+                </a>
+              </div>
+            )}
+            
+            {/* Smart Tutor Bot - Get AI explanation for any answer */}
+            {quiz.selectedAnswer && (
+              <div className="mt-4 pt-4 border-t border-blue-500/30">
+                <TutorBot
+                  question={quiz.currentQuestion.question}
+                  userAnswer={quiz.selectedAnswer || 'N/A'}
+                  correctAnswer={getCorrectAnswer(quiz.currentQuestion)?.label || 'N/A'}
+                  showAnswer={true}
+                  isPaid={false}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -234,13 +339,17 @@ export const Quiz = () => {
           {isAnswered && quiz.currentIndex === quiz.progress.total - 1 && (
             <Button
               onClick={() => {
-                navigate('/');
+                if (isDemoMode) {
+                  setDemoComplete(true);
+                } else {
+                  navigate('/');
+                }
               }}
               variant="success"
               size="lg"
               className="flex-1"
             >
-              Complete Quiz
+              {isDemoMode ? 'See Results →' : 'Complete Quiz'}
             </Button>
           )}
         </div>

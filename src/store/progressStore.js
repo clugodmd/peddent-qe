@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { recordProgressToFirestore } from '../services/firestoreProgress';
+import { auth } from '../firebase';
 
 const STORAGE_KEY = 'peddent_progress';
 const SETTINGS_KEY = 'peddent_settings';
@@ -62,7 +64,14 @@ export const useProgressStore = create((set, get) => {
       };
     },
 
-    recordAttempt: (questionId, isCorrect, timeSpent = 0) => {
+    /**
+     * recordAttempt — saves to localStorage AND Firestore.
+     * @param {number|string} questionId
+     * @param {boolean} isCorrect
+     * @param {number} timeSpent
+     * @param {object} questionMeta — { answer, topic } for Firestore
+     */
+    recordAttempt: (questionId, isCorrect, timeSpent = 0, questionMeta = {}) => {
       set((state) => {
         const current = state.progress[questionId] || {
           attempts: 0,
@@ -86,6 +95,17 @@ export const useProgressStore = create((set, get) => {
 
         const newProgress = { ...state.progress, [questionId]: updated };
         saveToStorage(newProgress, STORAGE_KEY);
+
+        // Fire-and-forget Firestore write
+        const user = auth.currentUser;
+        if (user) {
+          recordProgressToFirestore(user.uid, String(questionId), {
+            correct: isCorrect,
+            answer: questionMeta.answer || '',
+            topic: questionMeta.topic || ''
+          }).catch(console.error);
+        }
+
         return { progress: newProgress };
       });
     },
@@ -166,7 +186,6 @@ export const useProgressStore = create((set, get) => {
       const progress = state.progress;
       let totalAttempted = 0;
       let totalCorrect = 0;
-      const topicStats = {};
 
       Object.values(progress).forEach((item) => {
         if (item.attempts > 0) {
@@ -180,7 +199,7 @@ export const useProgressStore = create((set, get) => {
         totalAttempted,
         totalCorrect,
         accuracy: totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(1) : 0,
-        topicStats
+        topicStats: {}
       };
     },
 
@@ -257,10 +276,5 @@ const calculateNextReview = (current, isCorrect) => {
   }
 
   const nextReview = Date.now() + interval * 24 * 60 * 60 * 1000;
-
-  return {
-    easeFactor,
-    interval,
-    nextReview
-  };
+  return { easeFactor, interval, nextReview };
 };

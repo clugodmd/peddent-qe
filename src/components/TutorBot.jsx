@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { generateExplanation } from '../utils/tutorBot';
+import { useDemo } from '../context/DemoContext';
 
 export const TutorBot = ({ question, userAnswer, correctAnswer, showAnswer, isPaid = false }) => {
+  const { isDemoMode } = useDemo();
   const [explanationVisible, setExplanationVisible] = useState(false);
   const [explanation, setExplanation] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,15 @@ export const TutorBot = ({ question, userAnswer, correctAnswer, showAnswer, isPa
   };
 
   if (!showAnswer) return null;
+
+  // Demo mode — show locked upsell instead of AI tutor
+  if (isDemoMode) {
+    return (
+      <div style={{ marginTop: '1rem', padding: '1rem 1.25rem', background: 'rgba(102,126,234,0.08)', border: '1px solid rgba(102,126,234,0.25)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <span style={{ color: '#a8b5d1', fontSize: '0.9rem' }}>🔒 <strong style={{color:'#e8eef9'}}>AI Smart Tutor</strong> is part of the subscription. <a href="https://buy.stripe.com/7sY00j8Ig4tEfGNdCugjC01" target="_blank" rel="noopener noreferrer" style={{color:'#90c97a', textDecoration:'underline', fontWeight:'600'}}>Sign up today →</a></span>
+      </div>
+    );
+  }
 
   return (
     <div className="tutor-bot">

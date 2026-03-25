@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/common/Button';
 import { QuestionCard } from '../components/common/QuestionCard';
@@ -15,6 +15,14 @@ export const Exam = () => {
   const navigate = useNavigate();
   const [examStarted, setExamStarted] = useState(false);
   const [questionCount, setQuestionCount] = useState(50);
+  // skipped: Set of question IDs
+  const [skipped, setSkipped] = useState(new Set());
+  // reviewingSkipped: when true, we're iterating only through skipped questions
+  const [reviewingSkipped, setReviewingSkipped] = useState(false);
+  // skippedQueue: ordered list of indices to review
+  const [skippedQueue, setSkippedQueue] = useState([]);
+  const [skippedQueuePos, setSkippedQueuePos] = useState(0);
+
   const quiz = useQuiz();
   const timer = useTimer(0, () => {
     endExam();
@@ -27,10 +35,57 @@ export const Exam = () => {
   const startExam = () => {
     const questions = getRandomQuestions(questionCount);
     quiz.setQuestions(questions);
+    setSkipped(new Set());
+    setReviewingSkipped(false);
     setExamStarted(true);
     timer.setCustomTime(EXAM_DURATIONS[questionCount] * 60);
     timer.start();
   };
+
+  // Skip current question and advance
+  const handleSkip = useCallback(() => {
+    const q = quiz.currentQuestion;
+    setSkipped((prev) => new Set([...prev, q.id]));
+    if (quiz.currentIndex < quiz.questions.length - 1) {
+      quiz.handleNext();
+    }
+  }, [quiz]);
+
+  // Start reviewing skipped questions
+  const startReviewSkipped = useCallback(() => {
+    const indices = quiz.questions.reduce((acc, q, i) => {
+      if (skipped.has(q.id)) acc.push(i);
+      return acc;
+    }, []);
+    if (indices.length === 0) return;
+    setSkippedQueue(indices);
+    setSkippedQueuePos(0);
+    quiz.goToQuestion(indices[0]);
+    setReviewingSkipped(true);
+  }, [quiz, skipped]);
+
+  // When an answer is submitted during skip review, remove from skipped set
+  const handleSubmitInReview = useCallback(() => {
+    quiz.handleSubmitAnswer();
+    const q = quiz.currentQuestion;
+    setSkipped((prev) => {
+      const next = new Set(prev);
+      next.delete(q.id);
+      return next;
+    });
+  }, [quiz]);
+
+  // Advance to next skipped question
+  const handleNextSkipped = useCallback(() => {
+    const nextPos = skippedQueuePos + 1;
+    if (nextPos < skippedQueue.length) {
+      setSkippedQueuePos(nextPos);
+      quiz.goToQuestion(skippedQueue[nextPos]);
+    } else {
+      // Done reviewing skipped — go back to normal flow
+      setReviewingSkipped(false);
+    }
+  }, [skippedQueuePos, skippedQueue, quiz]);
 
   if (!examStarted) {
     return (
@@ -74,6 +129,7 @@ export const Exam = () => {
                 <li>• No immediate feedback on answers</li>
                 <li>• Questions randomized</li>
                 <li>• Cannot review questions during exam</li>
+                <li>• Skip questions and return to them later</li>
                 <li>• Results shown at end with detailed breakdown</li>
               </ul>
             </div>
@@ -101,6 +157,34 @@ export const Exam = () => {
   }
 
   const choices = getAnswerChoices(quiz.currentQuestion);
+  const skippedCount = skipped.size;
+  const isCurrentSkipped = skipped.has(quiz.currentQuestion.id);
+  const isLastQuestion = quiz.currentIndex === quiz.progress.total - 1;
+  const isLastSkipped = reviewingSkipped && skippedQueuePos === skippedQueue.length - 1;
+
+  // Question navigator — show dots with skipped indicator
+  const navigatorDots = quiz.questions.map((q, i) => {
+    const isAnswered = !!quiz.answers[q.id];
+    const isSkippedQ = skipped.has(q.id);
+    const isCurrent = i === quiz.currentIndex;
+    return (
+      <button
+        key={q.id}
+        onClick={() => {
+          setReviewingSkipped(false);
+          quiz.goToQuestion(i);
+        }}
+        title={isSkippedQ ? 'Skipped' : isAnswered ? 'Answered' : 'Unanswered'}
+        className={`
+          w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center transition-all
+          ${isCurrent ? 'ring-2 ring-white scale-110' : ''}
+          ${isSkippedQ ? 'bg-amber-500 text-white' : isAnswered ? 'bg-green-600 text-white' : 'bg-navy-600 text-gray-400'}
+        `}
+      >
+        {isSkippedQ ? '🔖' : i + 1}
+      </button>
+    );
+  });
 
   return (
     <div className="min-h-screen bg-navy-900 pb-32">
@@ -109,7 +193,9 @@ export const Exam = () => {
         <div className="flex items-center justify-between p-4 max-w-4xl mx-auto">
           <div>
             <div className="text-sm text-gray-400">
-              Question {quiz.progress.current} of {quiz.progress.total}
+              {reviewingSkipped
+                ? `Reviewing skipped • ${skippedQueuePos + 1} of ${skippedQueue.length}`
+                : `Question ${quiz.progress.current} of ${quiz.progress.total}${skippedCount > 0 ? ` • ${skippedCount} skipped` : ''}`}
             </div>
           </div>
 
@@ -121,9 +207,31 @@ export const Exam = () => {
             {timer.display}
           </div>
         </div>
+
+        {/* Question navigator dots (scrollable) */}
+        <div className="px-4 pb-3 max-w-4xl mx-auto overflow-x-auto">
+          <div className="flex gap-1.5 flex-wrap">
+            {navigatorDots}
+          </div>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Skipped banner */}
+        {isCurrentSkipped && (
+          <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/40 rounded-lg px-4 py-2 mb-4 text-amber-300 text-sm font-medium">
+            <Bookmark size={15} />
+            This question was skipped — answer it now or skip again
+          </div>
+        )}
+
+        {/* Review skipped banner */}
+        {reviewingSkipped && (
+          <div className="bg-blue-600/20 border border-blue-500/40 rounded-lg px-4 py-2 mb-4 text-blue-300 text-sm font-medium">
+            Reviewing skipped questions — {skippedQueue.length - skippedQueuePos} remaining
+          </div>
+        )}
+
         {/* Question Card */}
         <QuestionCard
           question={quiz.currentQuestion}
@@ -146,55 +254,109 @@ export const Exam = () => {
           ))}
         </div>
 
-        {/* Submit Button */}
+        {/* Action buttons row */}
         {!quiz.answered && (
-          <Button
-            onClick={quiz.handleSubmitAnswer}
-            disabled={!quiz.selectedAnswer}
-            variant="primary"
-            size="lg"
-            className="w-full mb-6"
-          >
-            Submit Answer
-          </Button>
-        )}
-
-        {/* Navigation */}
-        <div className="flex gap-3 justify-between">
-          <Button
-            onClick={quiz.handlePrev}
-            disabled={quiz.currentIndex === 0}
-            variant="secondary"
-            size="lg"
-            className="flex items-center gap-2 flex-1"
-          >
-            <ChevronLeft size={20} />
-            Previous
-          </Button>
-
-          {quiz.answered && quiz.currentIndex < quiz.progress.total - 1 && (
+          <div className="flex gap-3 mb-6">
             <Button
-              onClick={quiz.handleNext}
+              onClick={reviewingSkipped ? handleSubmitInReview : quiz.handleSubmitAnswer}
+              disabled={!quiz.selectedAnswer}
               variant="primary"
-              size="lg"
-              className="flex items-center gap-2 flex-1"
-            >
-              Next
-              <ChevronRight size={20} />
-            </Button>
-          )}
-
-          {quiz.answered && quiz.currentIndex === quiz.progress.total - 1 && (
-            <Button
-              onClick={endExam}
-              variant="success"
               size="lg"
               className="flex-1"
             >
-              End Exam & See Results
+              Submit Answer
+            </Button>
+            <Button
+              onClick={handleSkip}
+              variant="secondary"
+              size="lg"
+              className="flex items-center gap-2 px-5"
+              title="Skip and return later"
+            >
+              <Bookmark size={16} />
+              Skip
+            </Button>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <div className="flex gap-3 justify-between mb-4">
+          {!reviewingSkipped && (
+            <Button
+              onClick={quiz.handlePrev}
+              disabled={quiz.currentIndex === 0}
+              variant="secondary"
+              size="lg"
+              className="flex items-center gap-2 flex-1"
+            >
+              <ChevronLeft size={20} />
+              Previous
             </Button>
           )}
+
+          {reviewingSkipped ? (
+            <>
+              {isLastSkipped ? (
+                <Button
+                  onClick={() => setReviewingSkipped(false)}
+                  variant="success"
+                  size="lg"
+                  className="flex-1"
+                >
+                  Done Reviewing
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNextSkipped}
+                  variant="primary"
+                  size="lg"
+                  className="flex items-center gap-2 flex-1"
+                >
+                  Next Skipped
+                  <ChevronRight size={20} />
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {quiz.answered && !isLastQuestion && (
+                <Button
+                  onClick={quiz.handleNext}
+                  variant="primary"
+                  size="lg"
+                  className="flex items-center gap-2 flex-1"
+                >
+                  Next
+                  <ChevronRight size={20} />
+                </Button>
+              )}
+
+              {isLastQuestion && (
+                <Button
+                  onClick={endExam}
+                  variant="success"
+                  size="lg"
+                  className="flex-1"
+                >
+                  End Exam & See Results
+                </Button>
+              )}
+            </>
+          )}
         </div>
+
+        {/* Review Skipped button — always visible when there are skipped questions */}
+        {skippedCount > 0 && !reviewingSkipped && (
+          <Button
+            onClick={startReviewSkipped}
+            variant="outline"
+            size="lg"
+            className="w-full flex items-center justify-center gap-2 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+          >
+            <Bookmark size={18} />
+            Review Skipped ({skippedCount})
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -34,16 +34,24 @@ export const QuestionCard = ({
         )}
       </div>
 
+      {question.case_image_url && (
+        <div className="mb-5">
+          <img
+            src={question.case_image_url}
+            alt={question.case_image_desc || 'Clinical case image'}
+            className="rounded-lg w-full max-w-md mx-auto block border border-navy-600 shadow"
+          />
+          {question.case_image_desc && (
+            <p className="text-xs text-gray-500 mt-2 text-center italic">{question.case_image_desc}</p>
+          )}
+        </div>
+      )}
+
       <h3 className="text-lg font-semibold text-gray-100 mb-6 leading-relaxed">
         {question.question}
       </h3>
 
-      {question.source && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-          <FlaskConical size={14} />
-          <span>{question.source}</span>
-        </div>
-      )}
+      {/* Source attribution hidden intentionally */}
     </div>
   );
 };

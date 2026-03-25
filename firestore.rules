@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Each user can only read/write their own data subtree
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // userDirectory: any authenticated user can write their own entry;
+    // only admin (by email) can read all entries.
+    // NOTE: For admin reads to work from the client, either use Firebase Admin SDK
+    // (server-side) or add a custom claim. For now, admin reads are allowed from
+    // the drlugo account (enforced in the app layer; Firestore rules allow all
+    // authenticated reads so the admin table works without custom claims).
+    match /userDirectory/{userId} {
+      // Any logged-in user can write their own directory entry
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Any logged-in user can read directory entries (admin table)
+      // Tighten this with custom claims in production if desired
+      allow read: if request.auth != null;
+    }
+  }
+}

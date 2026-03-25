@@ -1,14 +1,14 @@
 import { Settings, Stethoscope } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export const Header = ({ title = 'PedDent QE' }) => {
+export const Header = ({ title = 'PedBoards QE' }) => {
 
   return (
     <header className="sticky top-0 bg-navy-800 border-b border-navy-700 z-30">
       <div className="flex items-center justify-between p-4 max-w-4xl mx-auto">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl text-blue-400">
           <Stethoscope size={28} />
-          <span className="hidden sm:inline">PedDent QE</span>
+          <span className="hidden sm:inline">PedBoards QE</span>
           <span className="sm:hidden">QE</span>
         </Link>
 
