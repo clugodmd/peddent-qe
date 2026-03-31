@@ -4,7 +4,7 @@
  * Guards the "Create Account" flow with a Stripe paywall.
  *
  * Rules:
- *  - Emails ending in @uth.tmc.edu → free, skip payment
+ *  - Emails ending in UT System domains → free, skip payment
  *  - Everyone else → must pay $99 via Stripe before account creation
  *  - Existing accounts (already in Firebase) → login always works, no gate
  *
@@ -20,15 +20,26 @@ import { useEffect, useState } from 'react';
 import { CreditCard, CheckCircle, Stethoscope, ExternalLink } from 'lucide-react';
 
 // Stripe Payment Link (created via API)
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/7sY00j8Ig4tEfGNdCugjC01';
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/3cI7sL7Ec8JUbqx8iagjC02'; // $49/month
 
 // localStorage keys
 const LS_PENDING_EMAIL = 'peddent_payment_pending_email';
 const LS_PAID_EMAILS   = 'peddent_paid_emails'; // JSON array of approved emails
 
-/** Returns true if the email is the UTH domain (free tier). */
+/** Returns true if the email is a UT System domain (free tier). */
 export function isUTHEmail(email) {
-  return (email || '').trim().toLowerCase().endsWith('@uth.tmc.edu');
+  const FREE_DOMAINS = [
+    'uth.tmc.edu',        // UT Health Houston (main)
+    'uthscsa.edu',        // UT Health San Antonio
+    'utexas.edu',         // UT Austin
+    'utsouthwestern.edu', // UT Southwestern Dallas
+    'utmb.edu',           // UTMB Galveston
+    'utep.edu',           // UT El Paso
+    'utrgv.edu',          // UT Rio Grande Valley
+    'uthct.edu',          // UT Health East Texas
+  ];
+  const domain = (email || '').trim().toLowerCase().split('@')[1] || '';
+  return FREE_DOMAINS.some(d => domain === d || domain.endsWith('.' + d));
 }
 
 /** Returns true if this email already has a recorded payment approval locally. */
@@ -188,7 +199,7 @@ export function PaymentGate({ email, onPaymentVerified, onCancel }) {
       </button>
 
       <p className="text-center text-gray-600 text-xs">
-        Secure payment via Stripe · UTH residents use your <span className="text-gray-500">@uth.tmc.edu</span> email for free access
+        Secure payment via Stripe · UT System residents &amp; faculty get free access
       </p>
     </div>
   );

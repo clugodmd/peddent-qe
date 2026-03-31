@@ -31,9 +31,10 @@ export function DemoGate() {
             setError('Could not verify your email. Please try again.');
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error('Magic link verification failed:', err);
           setStatus('error');
-          setError('Verification failed. The link may have expired — please request a new one.');
+          setError('The verification link may have expired or your email client modified the link.');
         });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -136,6 +137,40 @@ export function DemoGate() {
             className="block mx-auto mt-4 text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
             Try a different email
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  // Error state with fallback demo access
+  if (status === 'error') {
+    return (
+      <Shell>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-700/30 mb-4">
+            <AlertCircle size={28} className="text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Verification Failed</h2>
+          <p className="text-gray-400 text-sm mb-6">
+            {error || 'The verification link may have expired or your email client modified the link.'}
+          </p>
+          <button
+            onClick={() => {
+              sessionStorage.setItem('peddent_demo', 'true');
+              sessionStorage.setItem('peddent_demo_verified', 'true');
+              window.location.href = window.location.origin + window.location.pathname + '#/quiz';
+            }}
+            className="w-full py-3 rounded-xl bg-green-700 hover:bg-green-600 active:bg-green-800 text-white font-semibold transition-colors flex items-center justify-center gap-2"
+          >
+            <ArrowRight size={16} />
+            Access Demo Directly
+          </button>
+          <button
+            onClick={() => { setStatus('idle'); setError(''); }}
+            className="block mx-auto mt-4 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            Try again with email
           </button>
         </div>
       </Shell>

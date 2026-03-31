@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Stethoscope, Lock, AlertCircle } from 'lucide-react';
 
-const VALID_CODES = ['PSPD-2026', 'LUGO-ADMIN'];
+const VALID_CODES = ['PSPD-2026', 'LUGO-ADMIN', 'UTHSC-2026', 'UTPEDS-2026'];
 const STORAGE_KEY = 'peddent_access_code';
 
 export function AccessCodeGate({ children }) {
@@ -55,7 +55,7 @@ export function AccessCodeGate({ children }) {
             <h2 className="text-gray-200 font-semibold">Access Required</h2>
           </div>
           <p className="text-gray-400 text-sm mb-5">
-            Enter your program access code to continue.
+            Contact your program coordinator or Dr. Lugo for your access code.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -66,7 +66,7 @@ export function AccessCodeGate({ children }) {
                 setCode(e.target.value);
                 setError('');
               }}
-              placeholder="e.g. PSPD-2026"
+              placeholder="e.g. UTHSC-2026"
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}

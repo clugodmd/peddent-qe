@@ -228,7 +228,7 @@ export function LoginScreen() {
               <Feedback error={error} success={success} />
               <SubmitButton loading={false} label="Continue →" />
               <p className="text-center text-gray-600 text-xs">
-                UTH residents (<span className="text-gray-500">@uth.tmc.edu</span>) get free access
+                UT System residents &amp; faculty get free access
               </p>
             </form>
           )}
