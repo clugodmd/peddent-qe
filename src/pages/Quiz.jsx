@@ -11,16 +11,30 @@ import { useQuiz } from '../hooks/useQuiz';
 import { useProgressStore } from '../store/progressStore';
 import { getRandomQuestions, getAnswerChoices, getCorrectAnswer, getUniqueTopic, getAllQuestions } from '../utils/helpers';
 import { useDemo } from '../context/DemoContext';
+import { useAuth } from '../context/AuthContext';
+import { loadUserStats } from '../services/firestoreProgress';
+import { getAdaptiveQuestions } from '../utils/tutorBot';
 
 export const Quiz = () => {
   const navigate = useNavigate();
   const { isDemoMode, exitDemo, DEMO_QUESTION_LIMIT } = useDemo();
+  const { user } = useAuth();
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [quizStarted, setQuizStarted] = useState(false);
   const [demoComplete, setDemoComplete] = useState(false);
   const [topics, setTopics] = useState([]);
   const [filterMode, setFilterMode] = useState('all');
+  const [topicBreakdown, setTopicBreakdown] = useState({});
   const quiz = useQuiz();
+
+  // Load user's topic performance for adaptive mode
+  useEffect(() => {
+    if (user && !isDemoMode) {
+      loadUserStats(user.uid).then(stats => {
+        if (stats?.topicBreakdown) setTopicBreakdown(stats.topicBreakdown);
+      });
+    }
+  }, [user, isDemoMode]);
 
   useEffect(() => {
     setTopics(getUniqueTopic());
@@ -51,7 +65,8 @@ export const Quiz = () => {
       const topicQuestions = allQuestions.filter((q) => q.topic === selectedTopic);
       questions = topicQuestions.length > 0 ? topicQuestions : getRandomQuestions(20);
     } else {
-      questions = allQuestions;
+      // Adaptive mode — weight toward weak topics
+      questions = getAdaptiveQuestions(getAllQuestions(), topicBreakdown, 20);
     }
 
     if (questions.length === 0) {
@@ -101,6 +116,11 @@ export const Quiz = () => {
               </div>
             </div>
 
+            {filterMode === 'all' && Object.keys(topicBreakdown).length > 0 && selectedTopic === 'all' && (
+              <div className="mb-4 px-4 py-3 rounded-lg bg-purple-900/30 border border-purple-500/30 text-sm text-purple-300">
+                🎯 <strong>Adaptive Mode:</strong> Questions weighted toward your weak areas
+              </div>
+            )}
             {filterMode === 'all' && (
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-300 mb-3">

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Lightbulb, Zap, BarChart3, AlertCircle, Shield } from 'lucide-react';
+import { Home, BookOpen, Bot, Lightbulb, Zap, BarChart3, AlertCircle, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useProgressStore } from '../../store/progressStore';
 import { getAllQuestions } from '../../utils/helpers';
@@ -26,6 +26,7 @@ export const BottomNav = () => {
   const links = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/quiz', icon: BookOpen, label: 'Quiz' },
+    { path: '/tutor', icon: Bot, label: 'AI Tutor' },
     { path: '/flashcards', icon: Lightbulb, label: 'Cards' },
     { path: '/exam', icon: Zap, label: 'Exam' },
     { path: '/missed', icon: AlertCircle, label: 'Missed', badge: missedCount > 0 ? missedCount : null },

@@ -19,6 +19,7 @@ import { Review } from './pages/Review';
 import { Progress } from './pages/Progress';
 import { Settings } from './pages/Settings';
 import { MissedQuestions } from './pages/MissedQuestions';
+import { Tutor } from './pages/Tutor';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { SupportChat } from './components/SupportChat';
 
@@ -124,6 +125,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={isDemoMode ? <Navigate to="/quiz" replace /> : <Home />} />
           <Route path="/quiz" element={<Quiz />} />
+          <Route path="/tutor" element={<Tutor />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/exam" element={<Exam />} />
           <Route path="/review" element={<Review />} />

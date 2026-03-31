@@ -328,7 +328,14 @@ export function LoginScreen() {
           </a>
         </div>
 
-        <p className="text-center text-gray-600 text-xs mt-4">
+        <p className="text-center text-gray-500 text-xs mt-4">
+          Need help?{' '}
+          <a href="mailto:support@pedsdentqe.com" className="text-blue-400 hover:text-blue-300 underline">
+            support@pedsdentqe.com
+          </a>
+          {' '}&mdash; we respond within 24 hours.
+        </p>
+        <p className="text-center text-gray-600 text-xs mt-2">
           © 2026 PedBoards QE · For program use only
         </p>
       </div>

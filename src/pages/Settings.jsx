@@ -385,6 +385,21 @@ export const Settings = () => {
           </button>
         </div>
 
+        {/* Support */}
+        <div className="bg-navy-800 rounded-xl p-6 mt-6 border border-navy-700">
+          <h2 className="text-xl font-bold text-gray-100 mb-2 flex items-center gap-2">
+            <Mail size={20} className="text-blue-400" />
+            Support
+          </h2>
+          <p className="text-sm text-gray-300">
+            Need help? Email{' '}
+            <a href="mailto:support@pedsdentqe.com" className="text-blue-400 hover:text-blue-300 underline font-medium">
+              support@pedsdentqe.com
+            </a>
+            {' '}&mdash; we respond within 24 hours.
+          </p>
+        </div>
+
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500">
           <p>PedBoards QE v1.0.0</p>
