@@ -12,8 +12,13 @@ import {
   createSession,
   subscribeToSession,
   clearSession,
-  checkSession
+  checkSession,
+  refreshSession,
+  deactivateSession,
+  getLocalSessionId
 } from '../services/sessionService';
+import { isAccessAllowed, getUserRole, checkRequiresVerification } from '../services/accessControl';
+import { scheduleUserEmails } from '../services/emailScheduler';
 import { useDemo } from './DemoContext';
 
 const AuthContext = createContext(null);
@@ -33,11 +38,13 @@ export const ADMIN_EMAIL = 'drlugo@thedentrepreneur.com';
  */
 export const KICK_MESSAGES = {
   'other-device':
-    'Your account is being used on another device. You have been signed out.',
+    'You were signed in on another device. Please sign in again.',
   'invalidated':
     'Your session was ended by an administrator. Please sign in again.',
   'no-session':
-    'Your session expired. Please sign in again.'
+    'Your session expired. Please sign in again.',
+  'blocked':
+    'Your account access has been suspended. Contact support@pedsdentqe.com'
 };
 
 export function AuthProvider({ children }) {
@@ -45,6 +52,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [kickMessage, setKickMessage] = useState('');
+  const [userRole, setUserRole] = useState('free');
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   // ── Demo mode: skip Firebase entirely ────────────────────────────────────
   if (isDemoMode) {
@@ -59,7 +68,11 @@ export function AuthProvider({ children }) {
           logIn: noop,
           logOut: noop,
           resetPassword: noop,
-          isAdmin: false
+          isAdmin: false,
+          userRole: 'free',
+          currentSessionId: null,
+          needsVerification: false,
+          setNeedsVerification: noop
         }}
       >
         {children}
@@ -85,6 +98,8 @@ export function AuthProvider({ children }) {
     }
     clearSession();
     setKickMessage(KICK_MESSAGES[reason] || KICK_MESSAGES['no-session']);
+    setUserRole('free');
+    setNeedsVerification(false);
     await signOut(auth);
   };
 
@@ -99,32 +114,58 @@ export function AuthProvider({ children }) {
     });
   };
 
+  /** Check access role and verification requirements after auth. */
+  const checkAccessAndRole = async (uid) => {
+    // Check if blocked
+    const allowed = await isAccessAllowed(uid);
+    if (!allowed) {
+      await forceLogout('blocked');
+      return false;
+    }
+
+    // Fetch and store role
+    const role = await getUserRole(uid);
+    setUserRole(role);
+
+    // Check if verification is required
+    const needsVerify = await checkRequiresVerification(uid);
+    setNeedsVerification(needsVerify);
+
+    return true;
+  };
+
   // ── auth state listener ────────────────────────────────────────────────────
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Check access control first
+        const accessOk = await checkAccessAndRole(firebaseUser.uid);
+        if (!accessOk) {
+          setLoading(false);
+          return;
+        }
+
         // Verify session is still valid before trusting the cached auth state
         const status = await checkSession(firebaseUser.uid);
         if (status === 'kicked') {
-          // Someone else logged in while we were offline/backgrounded
           await forceLogout('other-device');
         } else if (status === 'no-session') {
-          // Auth state persisted from a previous browser session but
-          // sessionStorage was wiped → treat as a fresh login, create session.
-          // But skip if logIn()/signUp() already handled this to avoid the
-          // double-write race condition.
           if (!sessionCreatedByLoginRef.current) {
             await createSession(firebaseUser.uid);
           }
           sessionCreatedByLoginRef.current = false;
           setUser(firebaseUser);
           startSessionWatch(firebaseUser.uid);
+          // Refresh lastSeen on page load
+          refreshSession(firebaseUser.uid);
         } else {
           // 'valid' — all good
           sessionCreatedByLoginRef.current = false;
           setUser(firebaseUser);
           startSessionWatch(firebaseUser.uid);
+          // Refresh lastSeen on page load
+          refreshSession(firebaseUser.uid);
         }
       } else {
         // Logged out — clean up listener
@@ -133,6 +174,8 @@ export function AuthProvider({ children }) {
           sessionUnsubRef.current = null;
         }
         setUser(null);
+        setUserRole('free');
+        setNeedsVerification(false);
       }
       setLoading(false);
     });
@@ -152,30 +195,41 @@ export function AuthProvider({ children }) {
     if (displayName) {
       await updateProfile(result.user, { displayName });
     }
-    // Signal that we're handling session creation here so onAuthStateChanged
-    // doesn't write a second token (which would cause a false kick).
     sessionCreatedByLoginRef.current = true;
     await createSession(result.user.uid);
+
+    // Schedule automated email sequence for new user
+    try {
+      await scheduleUserEmails(result.user.uid, email, new Date(), 'free');
+    } catch (e) {
+      console.error('Failed to schedule emails:', e);
+    }
+
     return result;
   };
 
   const logIn = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    // Signal that we're handling session creation here so onAuthStateChanged
-    // doesn't write a second token (which would cause a false kick).
     sessionCreatedByLoginRef.current = true;
-    // Overwrite any existing session — this kicks the other device
     await createSession(result.user.uid);
-    setKickMessage(''); // clear any stale kick message
+    setKickMessage('');
     return result;
   };
 
   const logOut = async () => {
+    const uid = user?.uid;
     if (sessionUnsubRef.current) {
       sessionUnsubRef.current();
       sessionUnsubRef.current = null;
     }
-    clearSession();
+    // Mark session inactive instead of just clearing local storage
+    if (uid) {
+      await deactivateSession(uid);
+    } else {
+      clearSession();
+    }
+    setUserRole('free');
+    setNeedsVerification(false);
     await signOut(auth);
   };
 
@@ -193,7 +247,11 @@ export function AuthProvider({ children }) {
         logIn,
         logOut,
         resetPassword,
-        isAdmin
+        isAdmin,
+        userRole,
+        currentSessionId: getLocalSessionId(),
+        needsVerification,
+        setNeedsVerification
       }}
     >
       {children}

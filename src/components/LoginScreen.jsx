@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Stethoscope, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff, MonitorSmartphone } from 'lucide-react';
+import { Stethoscope, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff, MonitorSmartphone, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { PaymentGate, isUTHEmail, hasLocalPaymentApproval, checkAndApplyStripeReturn } from './PaymentGate';
+import { setUserRole } from '../services/accessControl';
+import { createVerificationCode, verifyCode, sendVerificationEmail } from '../services/authCodeService';
 
 export function LoginScreen() {
-  const { logIn, signUp, resetPassword, kickMessage } = useAuth();
+  const { logIn, signUp, resetPassword, kickMessage, needsVerification, setNeedsVerification, user } = useAuth();
 
   const [mode, setMode] = useState('login'); // 'login' | 'signup' | 'forgot'
   const [signupStep, setSignupStep] = useState('email'); // 'email' | 'payment' | 'details'
@@ -16,6 +18,10 @@ export function LoginScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
   const clearMessages = () => { setError(''); setSuccess(''); };
 
@@ -100,7 +106,10 @@ export function LoginScreen() {
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
     try {
-      await signUp(email.trim(), password, displayName.trim());
+      const result = await signUp(email.trim(), password, displayName.trim());
+      // Set role based on how they signed up
+      const role = isUTHEmail(email.trim()) ? 'free' : 'paid';
+      await setUserRole(result.user.uid, role);
     } catch (err) {
       setError(friendlyError(err.code));
     } finally {
@@ -122,6 +131,118 @@ export function LoginScreen() {
       setLoading(false);
     }
   };
+
+  // ── Verification code handlers ──
+  const handleSendCode = async () => {
+    if (!user) return;
+    setVerificationLoading(true);
+    setVerificationError('');
+    try {
+      const code = await createVerificationCode(user.uid);
+      await sendVerificationEmail(user.email, code);
+      setCodeSent(true);
+    } catch (err) {
+      setVerificationError('Failed to send verification code. Please try again.');
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    setVerificationLoading(true);
+    setVerificationError('');
+    try {
+      const result = await verifyCode(user.uid, verificationCode);
+      if (result.valid) {
+        setNeedsVerification(false);
+      } else {
+        setVerificationError(result.reason);
+      }
+    } catch (err) {
+      setVerificationError('Verification failed. Please try again.');
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  // ── Verification screen ──
+  if (needsVerification && user) {
+    return (
+      <div className="min-h-screen bg-navy-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-700 mb-4 shadow-lg">
+              <ShieldCheck size={32} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Verify Your Identity</h1>
+            <p className="text-gray-400 mt-1 text-sm">
+              A verification code is required to access your account.
+            </p>
+          </div>
+
+          <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6 shadow-xl space-y-4">
+            {!codeSent ? (
+              <>
+                <p className="text-gray-300 text-sm text-center">
+                  We'll send a 6-digit code to <span className="text-white font-medium">{user.email}</span>
+                </p>
+                <button
+                  onClick={handleSendCode}
+                  disabled={verificationLoading}
+                  className="w-full py-3 rounded-xl bg-blue-700 hover:bg-blue-600 disabled:opacity-60 text-white font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  {verificationLoading ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Sending…</span>
+                    </>
+                  ) : 'Send Verification Code'}
+                </button>
+              </>
+            ) : (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <p className="text-green-400 text-sm text-center">
+                  Code sent to {user.email}
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center text-2xl tracking-[0.3em] py-3 rounded-xl bg-navy-900 border border-navy-600 text-white placeholder-gray-600 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+                />
+                {verificationError && (
+                  <div className="flex items-start gap-2 text-red-400 text-sm">
+                    <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                    <span>{verificationError}</span>
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={verificationLoading || verificationCode.length !== 6}
+                  className="w-full py-3 rounded-xl bg-green-700 hover:bg-green-600 disabled:opacity-60 text-white font-semibold transition-colors"
+                >
+                  {verificationLoading ? 'Verifying…' : 'Verify'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendCode}
+                  disabled={verificationLoading}
+                  className="w-full text-center text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Resend code
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const switchMode = (newMode) => {
     setMode(newMode);

@@ -18,6 +18,7 @@
 
 import { useEffect, useState } from 'react';
 import { CreditCard, CheckCircle, Stethoscope, ExternalLink } from 'lucide-react';
+import { setUserRole } from '../services/accessControl';
 
 // Stripe Payment Link (created via API)
 const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/3cI7sL7Ec8JUbqx8iagjC02'; // $49/month

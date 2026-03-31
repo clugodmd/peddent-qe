@@ -55,7 +55,7 @@ export function AccessCodeGate({ children }) {
             <h2 className="text-gray-200 font-semibold">Access Required</h2>
           </div>
           <p className="text-gray-400 text-sm mb-5">
-            Contact your program coordinator or Dr. Lugo for your access code.
+            Contact your program coordinator or email support@pedsdentqe.com for your access code.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
