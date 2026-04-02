@@ -19,6 +19,8 @@ import {
 } from '../services/sessionService';
 import { isAccessAllowed, getUserRole, checkRequiresVerification } from '../services/accessControl';
 import { scheduleUserEmails } from '../services/emailScheduler';
+import { syncProgressOnLogin } from '../services/progressMigration';
+import { useProgressStore } from '../store/progressStore';
 import { useDemo } from './DemoContext';
 
 const AuthContext = createContext(null);
@@ -157,15 +159,21 @@ export function AuthProvider({ children }) {
           sessionCreatedByLoginRef.current = false;
           setUser(firebaseUser);
           startSessionWatch(firebaseUser.uid);
-          // Refresh lastSeen on page load
           refreshSession(firebaseUser.uid);
+          // Sync + migrate progress from Firestore → localStorage silently
+          syncProgressOnLogin(firebaseUser.uid).then((merged) => {
+            useProgressStore.getState().hydrateProgress(merged);
+          }).catch(() => {});
         } else {
           // 'valid' — all good
           sessionCreatedByLoginRef.current = false;
           setUser(firebaseUser);
           startSessionWatch(firebaseUser.uid);
-          // Refresh lastSeen on page load
           refreshSession(firebaseUser.uid);
+          // Sync + migrate progress from Firestore → localStorage silently
+          syncProgressOnLogin(firebaseUser.uid).then((merged) => {
+            useProgressStore.getState().hydrateProgress(merged);
+          }).catch(() => {});
         }
       } else {
         // Logged out — clean up listener

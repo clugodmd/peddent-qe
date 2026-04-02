@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { recordProgressToFirestore } from '../services/firestoreProgress';
+import { loadLocalProgress, saveLocalProgress } from '../services/progressMigration';
 import { auth } from '../firebase';
 
-const STORAGE_KEY = 'peddent_progress';
+// Versioned key — migration handled by progressMigration.js
+const STORAGE_KEY = 'peddent_progress_v3';
 const SETTINGS_KEY = 'peddent_settings';
 
 const defaultSettings = {
@@ -14,8 +16,8 @@ const defaultSettings = {
 
 const loadProgressFromStorage = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {};
+    // Use migration-aware loader (handles old key names automatically)
+    return loadLocalProgress();
   } catch (e) {
     console.error('Failed to load progress:', e);
     return {};
@@ -34,7 +36,12 @@ const loadSettingsFromStorage = () => {
 
 const saveToStorage = (data, key) => {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    if (key === STORAGE_KEY) {
+      // Use migration-aware saver (always writes to current versioned key)
+      saveLocalProgress(data);
+    } else {
+      localStorage.setItem(key, JSON.stringify(data));
+    }
   } catch (e) {
     console.error('Failed to save to storage:', e);
   }
@@ -153,6 +160,14 @@ export const useProgressStore = create((set, get) => {
     resetAllProgress: () => {
       set({ progress: {} });
       saveToStorage({}, STORAGE_KEY);
+    },
+
+    // Called after Firestore sync on login — replaces in-memory state with merged data
+    hydrateProgress: (merged) => {
+      if (merged && typeof merged === 'object' && Object.keys(merged).length > 0) {
+        set({ progress: merged });
+        saveToStorage(merged, STORAGE_KEY);
+      }
     },
 
     // Settings methods
