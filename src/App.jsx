@@ -23,15 +23,41 @@ import { Tutor } from './pages/Tutor';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { SupportChat } from './components/SupportChat';
 
-// PWA Service Worker
+// PWA Service Worker — auto-update on deploy, no hard refresh needed
 const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch((error) => {
-        console.log('Service Worker registration failed:', error);
+  if (!('serviceWorker' in navigator)) return;
+
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+
+      // When a new SW is found, tell it to activate immediately
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version ready — tell it to skip waiting and take over
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
       });
-    });
-  }
+
+      // When the SW sends SW_UPDATED (after it activates), reload the page silently
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'SW_UPDATED') {
+          // Small delay so the SW fully activates before reload
+          setTimeout(() => window.location.reload(), 300);
+        }
+      });
+
+      // Also check for updates every 60 seconds while the app is open
+      setInterval(() => reg.update(), 60 * 1000);
+
+    } catch (error) {
+      console.log('Service Worker registration failed:', error);
+    }
+  });
 };
 
 // Install prompt
