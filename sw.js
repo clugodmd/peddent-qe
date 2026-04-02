@@ -1,69 +1,89 @@
-const CACHE_NAME = 'peddent-qe-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/apple-touch-icon.png'
-];
+// PedBoards QE — Service Worker
+// Strategy: Network-first for HTML/JS/CSS (always fresh), cache-first for images/fonts
+// Auto-updates silently: when a new version is detected, reload all open tabs automatically.
 
+const CACHE_VERSION = 'peddent-qe-v3';
+const STATIC_ASSETS = ['/manifest.json', '/favicon.svg', '/apple-touch-icon.png'];
+
+// ── Install: pre-cache static assets only ─────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
-      })
-      .catch((err) => {
-        console.log('Cache addAll error:', err);
-      })
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
+  // Activate immediately — don't wait for old tabs to close
   self.skipWaiting();
 });
 
+// ── Activate: wipe old caches, claim all clients ──────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((cacheName) => cacheName !== CACHE_NAME)
-          .map((cacheName) => caches.delete(cacheName))
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// ── Fetch: network-first for app shell; cache-first for images/fonts ──────
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Always go to network for the app HTML + JS/CSS bundles (versioned filenames cover this)
+  // Network-first: try network, fall back to cache, never serve stale HTML
+  const isAppShell = url.pathname === '/' || url.pathname.endsWith('.html');
+  const isAsset    = /\.(js|css)$/.test(url.pathname);
+  const isMedia    = /\.(png|jpg|jpeg|svg|gif|webp|woff2?|ttf)$/.test(url.pathname);
+
+  if (isAppShell || isAsset) {
+    // Network-first: always try to get fresh, fall back to cache for offline
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
+  if (isMedia) {
+    // Cache-first for images/fonts — these don't change often
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
         return fetch(event.request).then((response) => {
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response;
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, clone));
           }
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
           return response;
         });
       })
-      .catch(() => {
-        return new Response('Offline - Resource not available', {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: new Headers({
-            'Content-Type': 'text/plain'
-          })
-        });
-      })
+    );
+    return;
+  }
+
+  // Everything else: network only (API calls, Firebase, etc.)
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+});
+
+// ── Auto-update message: tell all clients to reload when new SW activates ─
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Notify all open tabs to reload silently after new SW takes over
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      clients.forEach((client) => client.postMessage({ type: 'SW_UPDATED' }));
+    })
   );
 });
