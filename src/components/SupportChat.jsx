@@ -7,12 +7,27 @@ const WELCOME_MESSAGE = {
 };
 
 export const SupportChat = () => {
-  const [open, setOpen] = useState(false);
+  // Auto-open on first visit per session; stay closed if user manually dismissed
+  const [open, setOpen] = useState(() => {
+    try { return sessionStorage.getItem('support_chat_dismissed') !== 'true'; }
+    catch { return true; }
+  });
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pulse, setPulse] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Pulse the FAB when closed to draw attention
+  useEffect(() => {
+    if (!open) {
+      const t = setTimeout(() => setPulse(true), 800);
+      return () => clearTimeout(t);
+    } else {
+      setPulse(false);
+    }
+  }, [open]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -21,6 +36,11 @@ export const SupportChat = () => {
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  const handleClose = () => {
+    setOpen(false);
+    try { sessionStorage.setItem('support_chat_dismissed', 'true'); } catch {}
+  };
 
   const handleSend = async () => {
     const question = input.trim();
@@ -51,7 +71,7 @@ export const SupportChat = () => {
           {/* Header */}
           <div style={styles.header}>
             <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>PedBoards QE Support</span>
-            <button onClick={() => setOpen(false)} style={styles.closeBtn}>✕</button>
+            <button onClick={handleClose} style={styles.closeBtn}>✕</button>
           </div>
 
           {/* Messages */}
@@ -98,15 +118,34 @@ export const SupportChat = () => {
       )}
 
       {/* Floating Bubble */}
-      <button onClick={() => setOpen((o) => !o)} style={styles.fab}>
+      <button
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          if (!next) {
+            try { sessionStorage.setItem('support_chat_dismissed', 'true'); } catch {}
+          } else {
+            setPulse(false);
+          }
+        }}
+        style={{
+          ...styles.fab,
+          ...(pulse && !open ? styles.fabPulse : {}),
+        }}
+      >
         {open ? '✕' : '💬'}
       </button>
 
-      {/* Keyframe animation for dots */}
+      {/* Keyframe animations */}
       <style>{`
         @keyframes supportDotPulse {
           0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
           40% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes fabPing {
+          0% { box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 0 rgba(45,122,74,0.6); }
+          70% { box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 14px rgba(45,122,74,0); }
+          100% { box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 0 rgba(45,122,74,0); }
         }
       `}</style>
     </>
@@ -229,5 +268,8 @@ const styles = {
     cursor: 'pointer',
     fontSize: '1rem',
     transition: 'background 0.2s',
+  },
+  fabPulse: {
+    animation: 'fabPing 1.8s ease-in-out infinite',
   },
 };
