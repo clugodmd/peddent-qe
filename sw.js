@@ -1,4 +1,4 @@
-const CACHE_NAME = 'peddent-qe-v2';
+const CACHE_NAME = 'peddent-qe-v1';
 const urlsToCache = [
   '/',
   '/index.html',
