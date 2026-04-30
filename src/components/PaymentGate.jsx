@@ -161,7 +161,7 @@ export function PaymentGate({ email, onPaymentVerified, onCancel }) {
 
       {/* Pricing */}
       <div className="bg-green-900/20 border border-green-700/40 rounded-xl px-4 py-4 text-center">
-        <div className="text-3xl font-bold text-white mb-0.5">$35</div>
+        <div className="text-3xl font-bold text-white mb-0.5">$49</div>
         <div className="text-green-400 text-sm">Monthly Access</div>
         <ul className="mt-3 text-gray-400 text-xs space-y-1">
           <li>✓ Full question bank access</li>
@@ -185,7 +185,7 @@ export function PaymentGate({ email, onPaymentVerified, onCancel }) {
         ) : (
           <>
             <ExternalLink size={16} />
-            <span>Pay $35/month &amp; Create Account</span>
+            <span>Pay $49/month &amp; Create Account</span>
           </>
         )}
       </button>

@@ -149,7 +149,7 @@ export const TutorBot = ({ question, userAnswer, correctAnswer, showAnswer, isPa
             </div>
           )}
           {!loading && explanation && (
-            <div style={{ color: '#1a1a2e', lineHeight: '1.6' }}>
+            <div style={{ color: '#e2e8f0', lineHeight: '1.6' }}>
               <p style={{ fontSize: '0.95rem' }}>{explanation}</p>
               <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#4a5568', textAlign: 'right' }}>
                 🤖 Powered by Claude AI

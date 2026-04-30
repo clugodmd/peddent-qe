@@ -21,6 +21,7 @@ import { Settings } from './pages/Settings';
 import { MissedQuestions } from './pages/MissedQuestions';
 import { Tutor } from './pages/Tutor';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { Cases } from './pages/Cases';
 import { SupportChat } from './components/SupportChat';
 
 // PWA Service Worker — auto-update on deploy, no hard refresh needed
@@ -158,6 +159,7 @@ export default function App() {
           <Route path="/progress" element={<Progress />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/missed" element={<MissedQuestions />} />
+          <Route path="/cases" element={<Cases />} />
           {isAdmin && <Route path="/admin" element={<AdminDashboard />} />}
 
           {/* Not Found */}

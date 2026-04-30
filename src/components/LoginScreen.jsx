@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Stethoscope, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff, MonitorSmartphone, ShieldCheck } from 'lucide-react';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { PaymentGate, isUTHEmail, hasLocalPaymentApproval, checkAndApplyStripeReturn } from './PaymentGate';
 import { setUserRole } from '../services/accessControl';
@@ -22,8 +24,32 @@ export function LoginScreen() {
   const [verificationError, setVerificationError] = useState('');
   const [verificationLoading, setVerificationLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [googleError, setGoogleError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const clearMessages = () => { setError(''); setSuccess(''); };
+  const clearMessages = () => { setError(''); setSuccess(''); setGoogleError(''); };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleError('');
+    setGoogleLoading(true);
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+      // onAuthStateChanged in AuthContext will handle the rest
+    } catch (err) {
+      if (
+        err.code === 'auth/popup-closed-by-user' ||
+        err.code === 'auth/cancelled-popup-request'
+      ) {
+        // User dismissed popup — no error needed
+      } else if (err.code === 'auth/popup-blocked') {
+        setGoogleError('Popup was blocked. Please allow popups for this site and try again.');
+      } else {
+        setGoogleError('Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   // On mount: check if returning from Stripe payment redirect
   useEffect(() => {
@@ -277,6 +303,20 @@ export function LoginScreen() {
 
         {/* Card */}
         <div className="bg-navy-800 border border-navy-700 rounded-2xl p-6 shadow-xl">
+
+          {/* Google Sign-In — shown on login and signup (email step) only */}
+          {mode !== 'forgot' && signupStep !== 'payment' && signupStep !== 'details' && (
+            <>
+              <GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
+              {googleError && (
+                <div className="flex items-start gap-2 text-red-400 text-sm mt-2">
+                  <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                  <span>{googleError}</span>
+                </div>
+              )}
+              <OrDivider />
+            </>
+          )}
 
           {/* Mode Tabs (login / signup) — hide when in payment gate step */}
           {mode !== 'forgot' && signupStep !== 'payment' && (
@@ -546,5 +586,33 @@ function SubmitButton({ loading, label }) {
         </>
       ) : label}
     </button>
+  );
+}
+
+function GoogleSignInButton({ onClick, loading }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="w-full py-3 rounded-xl bg-white hover:bg-gray-50 active:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed border border-gray-300 text-gray-800 font-semibold transition-colors flex items-center justify-center gap-3 shadow-sm"
+    >
+      {loading ? (
+        <span className="inline-block w-4 h-4 border-2 border-gray-400/30 border-t-gray-700 rounded-full animate-spin" />
+      ) : (
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-200 text-xs font-bold" style={{ color: '#4285F4' }}>G</span>
+      )}
+      <span>Continue with Google</span>
+    </button>
+  );
+}
+
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3 my-1">
+      <div className="flex-1 h-px bg-navy-600" />
+      <span className="text-gray-500 text-xs">— or —</span>
+      <div className="flex-1 h-px bg-navy-600" />
+    </div>
   );
 }
