@@ -11,7 +11,7 @@ import { auth } from '../firebase';
 
 export const Settings = () => {
   const navigate = useNavigate();
-  const { user, logOut } = useAuth();
+  const { user, logOut, resetPassword } = useAuth();
   const settings = useProgressStore((state) => state.settings);
   const updateSettings = useProgressStore((state) => state.updateSettings);
   const resetAllProgress = useProgressStore((state) => state.resetAllProgress);

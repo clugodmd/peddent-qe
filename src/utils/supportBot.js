@@ -23,7 +23,16 @@ Do NOT make up information. Do NOT discuss topics outside the platform.`;
 
 export async function askSupportBot(question) {
   try {
-    const endpoint = 'http://100.123.132.50:3001/api/generate';
+    const endpoint = import.meta.env.VITE_SUPPORT_BOT_URL;
+
+    if (!endpoint) {
+      return "Please email support@pedsdentqe.com and we'll help you within 24 hours.";
+    }
+
+    const url = new URL(endpoint);
+    if (window.location.protocol === 'https:' && url.protocol !== 'https:') {
+      return "Please email support@pedsdentqe.com and we'll help you within 24 hours.";
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);

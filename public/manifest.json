@@ -34,7 +34,10 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "screenshots": [
     {
       "src": "/screenshot-1.png",
@@ -54,7 +57,7 @@
       "name": "Quiz Mode",
       "short_name": "Quiz",
       "description": "Start a quick quiz session",
-      "url": "/quiz",
+      "url": "/#/quiz",
       "icons": [
         {
           "src": "/icon-192.png",
@@ -67,7 +70,7 @@
       "name": "Exam Simulation",
       "short_name": "Exam",
       "description": "Take a full exam simulation",
-      "url": "/exam",
+      "url": "/#/exam",
       "icons": [
         {
           "src": "/icon-192.png",
