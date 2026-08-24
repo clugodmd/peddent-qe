@@ -9,6 +9,8 @@ import { useAuth } from './context/AuthContext';
 import { useDemo } from './context/DemoContext';
 import { DemoGate } from './pages/DemoGate';
 import { registerUserDirectory } from './services/firestoreProgress';
+import { PaymentGate, isUTHEmail } from './components/PaymentGate';
+import { setUserRole } from './services/accessControl';
 
 // Pages
 import { Home } from './pages/Home';
@@ -84,7 +86,7 @@ const handleInstallPrompt = () => {
 };
 
 export default function App() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, userRole, logOut } = useAuth();
   const { isDemoMode, demoVerified } = useDemo();
   const settings = useProgressStore((state) => state.settings);
   const [disclaimerDone, setDisclaimerDone] = useState(hasAgreedToDisclaimer);
@@ -125,6 +127,11 @@ export default function App() {
     );
   }
 
+
+  const hasFullBankAccess = Boolean(
+    user && (userRole === 'paid' || userRole === 'gifted' || (userRole === 'free' && isUTHEmail(user.email)))
+  );
+
   // Demo mode but not yet verified → show email gate
   if (isDemoMode && !demoVerified) {
     return <DemoGate />;
@@ -137,6 +144,19 @@ export default function App() {
         <LoginScreen />
         <SupportChat />
       </>
+    );
+  }
+
+  if (!isDemoMode && !hasFullBankAccess) {
+    return (
+      <PaymentGate
+        email={user.email}
+        onPaymentVerified={async () => {
+          await setUserRole(user.uid, isUTHEmail(user.email) ? 'free' : 'paid');
+          window.location.reload();
+        }}
+        onCancel={() => { logOut(); }}
+      />
     );
   }
 

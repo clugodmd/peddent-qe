@@ -8,8 +8,10 @@ export const getQuestionsByTopic = (topic) => {
 };
 
 export const getRandomQuestions = (count, exclude = []) => {
-  const available = questionsData.filter((q) => !exclude.includes(q.id));
-  const shuffled = [...available].sort(() => Math.random() - 0.5);
+  const excludeSet = new Set((exclude || []).map((id) => String(id)));
+  const unseen = questionsData.filter((q) => !excludeSet.has(String(q.id)));
+  const pool = unseen.length > 0 ? unseen : questionsData;
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 };
 

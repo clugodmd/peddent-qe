@@ -8,7 +8,7 @@ import { ChoiceButton } from '../components/common/ChoiceButton';
 import { useQuiz } from '../hooks/useQuiz';
 import { useTimer } from '../hooks/useTimer';
 import { useProgressStore } from '../store/progressStore';
-import { getRandomQuestions, getAnswerChoices, getCorrectAnswer } from '../utils/helpers';
+import { getRandomQuestions, getAnswerChoices, getCorrectAnswer, getAllQuestions } from '../utils/helpers';
 import { EXAM_DURATIONS } from '../constants';
 
 export const Exam = () => {
@@ -33,7 +33,11 @@ export const Exam = () => {
   };
 
   const startExam = () => {
-    const questions = getRandomQuestions(questionCount);
+    const allQs = getAllQuestions();
+    const unseen = useProgressStore.getState().getUnattemptedQuestions(allQs);
+    const unseenIds = new Set(unseen.map((q) => String(q.id)));
+    const seenIds = unseen.length > 0 ? allQs.filter((q) => !unseenIds.has(String(q.id))).map((q) => q.id) : [];
+    const questions = getRandomQuestions(questionCount, seenIds);
     quiz.setQuestions(questions);
     setSkipped(new Set());
     setReviewingSkipped(false);

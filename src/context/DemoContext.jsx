@@ -5,26 +5,35 @@ const DemoContext = createContext(null);
 const DEMO_QUESTION_LIMIT = 15;
 
 /**
- * Checks URL for ?demo=true and manages demo state in sessionStorage.
- * Also tracks whether the demo email has been verified (demoVerified).
+ * Demo starts immediately from ?demo=true.
+ * sessionStorage is cleared on exit so the login landing comes back.
  */
 export function DemoProvider({ children }) {
-  const [isDemoMode, setIsDemoMode] = useState(() => {
-    // Check sessionStorage first (persists across hash navigations)
-    if (sessionStorage.getItem('peddent_demo') === 'true') return true;
-    // Check URL param — works with both ?demo=true and #/?demo=true (hash router)
+  const readDemoFlag = () => {
     const search = window.location.search || window.location.hash.split('?')[1] || '';
     const params = new URLSearchParams(search);
-    return params.get('demo') === 'true';
-  });
+    if (params.get('demo') === 'false') return false;
+    if (params.get('demo') === 'true') return true;
+    return sessionStorage.getItem('peddent_demo') === 'true';
+  };
 
-  const [demoVerified, setDemoVerified] = useState(() => {
-    return sessionStorage.getItem('peddent_demo_verified') === 'true';
-  });
+  const [isDemoMode, setIsDemoMode] = useState(readDemoFlag);
+  const [demoVerified, setDemoVerified] = useState(() => readDemoFlag());
 
   useEffect(() => {
+    const search = window.location.search || window.location.hash.split('?')[1] || '';
+    const params = new URLSearchParams(search);
+    if (params.get('demo') === 'false') {
+      sessionStorage.removeItem('peddent_demo');
+      sessionStorage.removeItem('peddent_demo_verified');
+      setIsDemoMode(false);
+      setDemoVerified(false);
+      return;
+    }
     if (isDemoMode) {
       sessionStorage.setItem('peddent_demo', 'true');
+      sessionStorage.setItem('peddent_demo_verified', 'true');
+      setDemoVerified(true);
     }
   }, [isDemoMode]);
 
@@ -38,10 +47,10 @@ export function DemoProvider({ children }) {
     sessionStorage.removeItem('peddent_demo_verified');
     setIsDemoMode(false);
     setDemoVerified(false);
-    // Remove ?demo=true from URL without reload
     const url = new URL(window.location);
     url.searchParams.delete('demo');
-    window.history.replaceState({}, '', url);
+    url.searchParams.delete('verified');
+    window.history.replaceState({}, '', url.pathname + url.hash);
   };
 
   return (

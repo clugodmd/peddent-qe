@@ -43,14 +43,19 @@ export const Quiz = () => {
   // Auto-start quiz in demo mode with limited questions
   useEffect(() => {
     if (isDemoMode && !quizStarted) {
-      quiz.setQuestions(getRandomQuestions(DEMO_QUESTION_LIMIT));
+      const seen = Object.entries(useProgressStore.getState().progress || {})
+      .filter(([, p]) => p && p.attempts > 0)
+      .map(([id]) => id);
+    quiz.setQuestions(getRandomQuestions(DEMO_QUESTION_LIMIT, seen));
       setQuizStarted(true);
     }
   }, [isDemoMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startQuiz = () => {
     let questions;
-    const allQuestions = quiz.questions && quiz.questions.length > 0 ? quiz.questions : getRandomQuestions(1000);
+    const allQuestions = getAllQuestions();
+    const unseen = useProgressStore.getState().getUnattemptedQuestions(allQuestions);
+    const pool = unseen.length > 0 ? unseen : allQuestions;
 
     if (filterMode === 'flagged') {
       const flaggedIds = useProgressStore.getState().getFlaggedQuestions();
@@ -62,11 +67,10 @@ export const Quiz = () => {
       const unattempted = useProgressStore.getState().getUnattemptedQuestions(allQuestions);
       questions = allQuestions.filter((q) => unattempted.includes(q.id));
     } else if (selectedTopic !== 'all') {
-      const topicQuestions = allQuestions.filter((q) => q.topic === selectedTopic);
-      questions = topicQuestions.length > 0 ? topicQuestions : getRandomQuestions(20);
+      const topicQuestions = pool.filter((q) => q.topic === selectedTopic);
+      questions = topicQuestions.length > 0 ? topicQuestions : pool.slice(0, 20);
     } else {
-      // Adaptive mode — weight toward weak topics
-      questions = getAdaptiveQuestions(getAllQuestions(), topicBreakdown, 20);
+      questions = getAdaptiveQuestions(pool, topicBreakdown, 20);
     }
 
     if (questions.length === 0) {
@@ -143,7 +147,8 @@ export const Quiz = () => {
 
             <Button
               onClick={() => {
-                quiz.setQuestions(getRandomQuestions(20));
+                const seenIds = Object.entries(useProgressStore.getState().progress || {}).filter(([, p]) => p && p.attempts > 0).map(([id]) => id);
+    quiz.setQuestions(getRandomQuestions(20, seenIds));
                 startQuiz();
               }}
               variant="primary"
