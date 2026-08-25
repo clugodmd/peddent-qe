@@ -2,7 +2,7 @@
 // Strategy: Network-first for HTML/JS/CSS (always fresh), cache-first for images/fonts
 // Auto-updates silently: when a new version is detected, reload all open tabs automatically.
 
-const CACHE_VERSION = 'peddent-qe-v3';
+const CACHE_VERSION = 'peddent-qe-v4';
 const STATIC_ASSETS = ['/manifest.json', '/favicon.svg', '/apple-touch-icon.png'];
 
 // ── Install: pre-cache static assets only ─────────────────────────────────
@@ -28,6 +28,17 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+
+  // Never intercept Firebase Auth redirects or Google identity
+  if (
+    url.pathname.startsWith('/__/auth') ||
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('gstatic.com') ||
+    url.hostname.includes('accounts.google.com') ||
+    url.hostname.includes('firebaseapp.com')
+  ) {
+    return;
+  }
 
   // Always go to network for the app HTML + JS/CSS bundles (versioned filenames cover this)
   // Network-first: try network, fall back to cache, never serve stale HTML
