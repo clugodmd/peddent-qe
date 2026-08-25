@@ -2,7 +2,7 @@
 // Strategy: Network-first for HTML/JS/CSS (always fresh), cache-first for images/fonts
 // Auto-updates silently: when a new version is detected, reload all open tabs automatically.
 
-const CACHE_VERSION = 'peddent-qe-v4';
+const CACHE_VERSION = 'peddent-qe-v5';
 const STATIC_ASSETS = ['/manifest.json', '/favicon.svg', '/apple-touch-icon.png'];
 
 // ── Install: pre-cache static assets only ─────────────────────────────────
@@ -14,11 +14,11 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ── Activate: wipe old caches, claim all clients ──────────────────────────
+// ── Activate: wipe ALL caches, claim all clients ──────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
+      Promise.all(keys.map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
